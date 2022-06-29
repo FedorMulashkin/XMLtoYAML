@@ -1,79 +1,107 @@
 package com.fedormulashkin.documentprocessing;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
-import org.json.JSONObject;
-import org.json.XML;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.fedormulashkin.objectsfromdocument.RdcTr;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
-public class XMLtoJSON {
+/**
+ * Данный класс предназначен для конвертирования определенноготипа XML-документов в YAML-документы.
+ * При выгрузке в YAML-файл не попадает поле Properties.TechRegs.
+ * Чтобы создать объект класса, нужно при создании объекта поместить путь к XML-файлу и YAML-файлу в конструктор.
+ * Класс содаржит только 1 публичный метод process(), который преобразует XML в YAML.
+ */
+public class XMLtoYAML {
+    private RdcTr document;
     private String xmlString;
     private JsonNode jsonNode;
-
-    private HashMap<String, JsonNode> map;
-    private String jsonString;
     private File xmlFile;
-
-    public XMLtoJSON(String path) throws IOException {
-        this.xmlFile = new File(path);
-        readXML();
-        XmlMapper xmlMapper = new XmlMapper();
-        try {
-            jsonNode = xmlMapper.readTree(xmlString.getBytes());
-            ObjectMapper jsonMapper = new ObjectMapper();
-            Iterator<Map.Entry<String, JsonNode>> iterator = jsonNode.fields();
-            JsonNode node = iterator.next().getValue();
-            node.forEach(System.out::println);
-            jsonString = jsonMapper.writeValueAsString(jsonNode);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        deleteUnnecessaryProperty();
+    private File yamlFile;
+    public XMLtoYAML() {
     }
 
-    public XMLtoJSON() {
+    public XMLtoYAML(String pathToXMLFile, String pathToYAMLFile) {
+        this.xmlFile = new File(pathToXMLFile);
+        this.yamlFile = new File(pathToYAMLFile);
+    }
+
+    public RdcTr getDocument() {
+        return document;
+    }
+
+    public String getXmlString() {
+        return xmlString;
     }
 
     public JsonNode getJsonNode() {
         return jsonNode;
     }
 
-    public void setXmlFile(String path) {
-        this.xmlFile = new File(path);
+    public File getXmlFile() {
+        return xmlFile;
     }
-    private void readXML(){
-        try (BufferedReader br = new BufferedReader(new FileReader(xmlFile))) {
-            StringBuilder sb = new StringBuilder();
-            while (br.ready()){
-                sb.append(br.readLine());
-                sb.append(System.lineSeparator());
-            }
-            xmlString = sb.toString();
+
+    public File getYamlFile() {
+        return yamlFile;
+    }
+
+    public void process() {
+        readXML();
+        xmlToJson();
+        createDocumentObject();
+        writeYAML();
+    }
+
+    private void xmlToJson() {
+        xmlString = readXML();
+        XmlMapper xmlMapper = new XmlMapper();
+        try {
+            jsonNode = xmlMapper.readTree(xmlString.getBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void deleteUnnecessaryProperty() throws IOException {
-        String jsonAsYaml = null;
+    private void writeYAML() {
+        YAMLMapper yamlMapper = new YAMLMapper();
         try {
-            jsonAsYaml = new YAMLMapper().writeValueAsString(jsonNode);
+            yamlMapper.writeValue(yamlFile, document);
+            System.out.println("YAML-файл " + yamlFile.getPath() + " готов");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void createDocumentObject() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+        objectMapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+        try {
+            document = objectMapper.readValue(jsonNode.get("RdcTr").toString(), RdcTr.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        mapper.writeValue(new File("output.yml"), jsonString);
-        //System.out.println(jsonAsYaml);
+    }
+
+    private String readXML() {
+        String tempXMLString;
+        try (BufferedReader br = new BufferedReader(new FileReader(xmlFile))) {
+            StringBuilder sb = new StringBuilder();
+            while (br.ready()) {
+                sb.append(br.readLine());
+                sb.append(System.lineSeparator());
+            }
+            tempXMLString = sb.toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return tempXMLString;
     }
 }

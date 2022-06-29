@@ -1,2 +1,4 @@
-package com.fedormulashkin.objectsfromdocument;public class ApplicantAl {
+package com.fedormulashkin.objectsfromdocument;
+
+public class ApplicantAl {
 }

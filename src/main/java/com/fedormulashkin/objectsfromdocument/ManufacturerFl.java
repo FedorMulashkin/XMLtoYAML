@@ -1,2 +1,4 @@
-package com.fedormulashkin.objectsfromdocument;public class ManufacturerFl {
+package com.fedormulashkin.objectsfromdocument;
+
+public class ManufacturerFl {
 }

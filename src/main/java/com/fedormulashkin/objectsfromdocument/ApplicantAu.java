@@ -1,2 +1,4 @@
-package com.fedormulashkin.objectsfromdocument;public class ApplicantAu {
+package com.fedormulashkin.objectsfromdocument;
+
+public class ApplicantAu {
 }

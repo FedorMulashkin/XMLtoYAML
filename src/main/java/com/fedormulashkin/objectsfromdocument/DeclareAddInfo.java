@@ -1,2 +1,4 @@
-package com.fedormulashkin.objectsfromdocument;public class DeclareAddInfo {
+package com.fedormulashkin.objectsfromdocument;
+
+public class DeclareAddInfo {
 }
